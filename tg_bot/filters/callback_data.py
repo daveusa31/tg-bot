@@ -65,7 +65,11 @@ class CallbackDataFilter(Filter):
         raise ValueError("That filter can't be used in filters factory!")
 
     async def check(self, callback: types.CallbackQuery):
-        data = self.factory.parse(callback.data)
+        record_in_db = self.factory.parse(callback.data)
+        if record_in_db is not None:
+            data = record_in_db.data
+        else:
+            data = record_in_db
 
         part_names = list(self.factory._part_names) + list(self.factory._default_part_names.keys())
 
@@ -75,6 +79,7 @@ class CallbackDataFilter(Filter):
 
                 for key, value in data.items():
                     setattr(response, key, value)
+                    setattr(response, "delete", record_in_db.delete_instanse)
                 for key, value in self.config.items():
                     if isinstance(value, (list, tuple, set, frozenset)):
                         if data.get(key) not in value:

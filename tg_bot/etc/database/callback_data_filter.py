@@ -11,7 +11,4 @@ def write_data(data):
 
 def get_data(code):
     data = CallbackDataFilter.get_or_none(code=code)
-    if data is not None:
-        data = data.data
-
     return data
