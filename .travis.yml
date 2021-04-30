@@ -5,7 +5,7 @@ python:
   
 
 before_install:
-  - pip install codecov
+  - pip install -r dev-requirements.txt
 
 
 install:

@@ -1,7 +1,7 @@
 from click.testing import CliRunner
 import pytest
 
-from peewee_migrate.cli import cli, get_router
+from tg_bot.etc.database.migrations.cli import cli, get_router
 
 runner = CliRunner()
 
