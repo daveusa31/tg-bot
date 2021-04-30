@@ -110,3 +110,15 @@ class Users(DataBase):
             user_model = cls
 
         return user_model
+
+
+class MigrateHistory(peewee.Model):
+
+    """Presents the migrations in database."""
+
+    name = peewee.CharField()
+    migrated_at = peewee.TimestampField()
+
+    def __unicode__(self):
+        """String representation."""
+        return self.name

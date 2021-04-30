@@ -1,2 +1,2 @@
 from .actions import *
-from .migrator import Router
+from .router import Migrator, Router

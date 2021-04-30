@@ -9,7 +9,7 @@ from . import fsm_storage
 from .etc.conf import settings
 from .etc.database import models
 from .etc import schedule as _schedule
-from .etc.database.migrations.migrator import Router
+from .etc.database.migrations import Router
 
 
 def setup(filter=True, handler=False, middleware=True, schedule=False, use_django=False):

@@ -1,7 +1,5 @@
 loguru>=0.5.3
 apscheduler>=3.6.3
-peewee-migrate>=1.4.0
-cached-property>=1.5.2
 peewee-extra-fields>=2.8.2
 bit-help @ https://github.com/daveusa31/bit-help/archive/54b93f94946ff1f4c122aeb0e7d02dcc1559bd3f.zip
 wrapcache @ https://github.com/daveusa31/wrapcache/archive/be06f720b0fbadd737dd547d22bb4faa803ee4a5.zip
