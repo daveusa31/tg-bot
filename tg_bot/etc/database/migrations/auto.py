@@ -5,15 +5,6 @@ from playhouse.reflection import Column as VanilaColumn
 
 INDENT = '    '
 NEWLINE = '\n' + INDENT
-FIELD_MODULES_MAP = {
-    'ArrayField': 'peewee_text',
-    'BinaryJSONField': 'peewee_pext',
-    'DateTimeTZField': 'peewee_pext',
-    'HStoreField': 'peewee_text',
-    'IntervalField': 'peewee_text',
-    'JSONField': 'peewee_text',
-    'TSVectorField': 'peewee_text',
-}
 
 
 def fk_to_params(field: peewee.ForeignKeyField):
@@ -70,10 +61,11 @@ class Column(VanilaColumn):
     def get_field(self, space=' '):
         # Generate the field definition for this column.
         field = super(Column, self).get_field()
-        module = FIELD_MODULES_MAP.get(self.field_class.__name__, 'peewee')
+        module = self.field_class.__module__
         name, _, field = [s and s.strip() for s in field.partition('=')]
-        return '{name}{space}={space}{module}.{field}'.format(
-            name=name, field=field, space=space, module=module)
+
+        response = "{name}{space}={space}{module}.{field}".format(name=name, space=space, module=module, field=field)
+        return response
 
     def get_field_parameters(self):
         params = super().get_field_parameters()

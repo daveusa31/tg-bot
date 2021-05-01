@@ -235,8 +235,17 @@ class Router(BaseRouter):
         name = '{:03}_'.format(num + 1) + name
         filename = name + '.py'
         path = os.path.join(self.migrate_dir, filename)
+
+        need_imports = []
+        for line in migrate.split("\n"):
+            if " = " in line and '"' not in line:
+                _import = "import {}".format(".".join(line.split(" = ")[1][:line.index("(")].split(".")[:-1]))
+                if _import not in need_imports:
+                    need_imports.append(_import)
+
+        imports_in_str = "\n".join(need_imports)
         with open(path, 'w') as f:
-            f.write(MIGRATE_TEMPLATE.format(migrate=migrate, rollback=rollback, name=filename))
+            f.write(MIGRATE_TEMPLATE.format(migrate=migrate, rollback=rollback, name=filename, imports=imports_in_str))
 
         return name
 
