@@ -1,8 +1,5 @@
 """Peewee migrations."""
 
-import datetime as dt
-import peewee as pw
-
 
 def migrate(migrator, database, **kwargs):
     """Write your migrations here.
@@ -26,7 +23,14 @@ def migrate(migrator, database, **kwargs):
     > migrator.add_default(Model, field_name, default)
 
     """
-    migrator.add_fields(
-        'tag', created_at=pw.DateTimeField(null=True))
+    Person = migrator.orm['person']
+    Person(
+        first_name='First',
+        last_name='Last',
+        email='person@example.com',
+    ).save()
 
-    migrator.add_index('person', 'first_name', unique=True)
+
+def rollback(migrator, database, **kwargs):
+    Person = migrator.orm['person']
+    Person.delete().where(Person.email == 'person@example.com').execute()

@@ -6,14 +6,14 @@ from playhouse.postgres_ext import (ArrayField, BinaryJSONField, DateTimeTZField
                                     HStoreField, IntervalField, JSONField,
                                     TSVectorField)
 
-CURDIR = path.abspath(path.dirname(__file__))
+current_dir = path.abspath(path.dirname(__file__))
 
 
 def test_auto():
     from tg_bot.etc.database.migrations.cli import get_router
     from tg_bot.etc.database.migrations.auto import diff_one, diff_many, model_to_code
 
-    router = get_router(path.join(CURDIR, 'migrations'), 'sqlite:///:memory:')
+    router = get_router(path.join(current_dir, 'migrations'), 'sqlite:///:memory:')
     router.run()
     migrator = router.migrator
     models = migrator.orm.values()
@@ -59,8 +59,25 @@ def test_auto():
         name = pw.CharField(default='red')
 
     code = model_to_code(Color)
-
     assert "default='red'" in code
+
+
+def test_auto_postgresext():
+    from tg_bot.etc.database.migrations.auto import model_to_code
+
+    class Object(pw.Model):
+        array_field = ArrayField()
+        binary_json_field = BinaryJSONField()
+        dattime_tz_field = DateTimeTZField()
+        hstore_field = HStoreField()
+        interval_field = IntervalField()
+        json_field = JSONField()
+        ts_vector_field = TSVectorField()
+
+    code = model_to_code(Object)
+    assert code
+    assert "json_field = peewee_text.JSONField()" in code
+    assert "hstore_field = peewee_text.HStoreField(index=True)" in code
 
 
 def test_auto_multi_column_index():

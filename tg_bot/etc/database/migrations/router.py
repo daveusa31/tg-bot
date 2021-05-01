@@ -1,8 +1,8 @@
 """Migration router."""
-
 import os
 import re
 import sys
+import typing
 import peewee
 import pkgutil
 import pathlib
@@ -20,7 +20,9 @@ from .logger import LOGGER
 from .migrator import Migrator
 from tg_bot.etc.conf import settings
 from .auto import diff_many, NEWLINE
+from .compat import string_types, exec_in
 from tg_bot.etc.database.models import MigrateHistory
+
 
 CLEAN_RE = re.compile(r'\s+$', re.M)
 CURDIR = os.getcwd()
@@ -44,7 +46,7 @@ class BaseRouter(object):
             raise RuntimeError('Invalid database: %s' % database)
 
     @cached_property
-    def model(self) -> MigrateHistory:
+    def model(self) -> typing.Type[MigrateHistory]:
         """Initialize and cache MigrationHistory model."""
         MigrateHistory._meta.database = self.database
         MigrateHistory._meta.schema = self.schema
@@ -78,24 +80,21 @@ class BaseRouter(object):
 
     def create(self, name='auto', auto=False):
         """Create a migration.
-
         :param auto: Python module path to scan for models.
         """
         migrate = rollback = ''
         if auto:
             # Need to append the CURDIR to the path for import to work.
             sys.path.append(CURDIR)
-            models = auto if isinstance(auto, list) else [auto]
-            if not all([_check_model(m) for m in models]):
-                try:
-                    modules = models
-                    if isinstance(auto, bool):
-                        modules = [m for _, m, ispkg in pkgutil.iter_modules([CURDIR]) if ispkg]
-                    models = [m for module in modules for m in load_models(module)]
+            try:
+                modules = [auto]
+                if isinstance(auto, bool):
+                    modules = [m for _, m, ispkg in pkgutil.iter_modules([CURDIR]) if ispkg]
 
-                except ImportError as exc:
-                    self.logger.exception(exc)
-                    return self.logger.error("Can't import models module: %s", auto)
+                models = [m for module in modules for m in get_models([import_module("models")])]
+
+            except ImportError:
+                return self.logger.error("Can't import models module: %s", auto)
 
             if self.ignore:
                 models = [m for m in models if m._meta.name not in self.ignore]
@@ -105,7 +104,7 @@ class BaseRouter(object):
 
             migrate = compile_migrations(self.migrator, models)
             if not migrate:
-                return self.logger.warning('No changes found.')
+                return self.logger.warn('No changes found.')
 
             rollback = compile_migrations(self.migrator, models, reverse=True)
 
@@ -146,10 +145,11 @@ class BaseRouter(object):
         try:
             migrate, rollback = self.read(name)
             if fake:
-                mocked_cursor = mock.Mock()
-                mocked_cursor.fetch_one.return_value = None
+                cursor_mock = mock.Mock()
+                cursor_mock.fetch_one.return_value = None
                 with mock.patch('peewee.Model.select'):
-                    with mock.patch('peewee.Database.execute_sql', return_value=mocked_cursor):
+                    with mock.patch('peewee.Database.execute_sql',
+                                    return_value=cursor_mock):
                         migrate(migrator, self.database, fake=fake)
 
                 if force:
@@ -214,7 +214,7 @@ class BaseRouter(object):
 class Router(BaseRouter):
     filemask = re.compile(r"[\d]{3}_[^\.]+\.py$")
 
-    def __init__(self, database, migrate_dir, module_name="bot", **kwargs):
+    def __init__(self, database, migrate_dir, module_name=None, **kwargs):
         super(Router, self).__init__(database, **kwargs)
         self.migrate_dir = migrate_dir
         self.module_name = module_name
@@ -223,7 +223,7 @@ class Router(BaseRouter):
     def todo(self):
         """Scan migrations in file system."""
         if not os.path.exists(self.migrate_dir):
-            self.logger.warning('Migration directory: %s does not exist.', self.migrate_dir)
+            self.logger.warn('Migration directory: %s does not exist.', self.migrate_dir)
             os.makedirs(self.migrate_dir)
         return sorted(f[:-3] for f in os.listdir(self.migrate_dir) if self.filemask.match(f))
 
@@ -258,8 +258,7 @@ class Router(BaseRouter):
         with open(migration_path, **call_params) as f:
             code = f.read()
             scope = {}
-            code = compile(code, '<string>', 'exec', dont_inherit=True)
-            exec(code, scope, None)
+            exec_in(code, scope)
             return scope.get('migrate', VOID), scope.get('rollback', VOID)
 
     def clear(self):
@@ -288,22 +287,43 @@ class ModuleRouter(BaseRouter):
 
 
 def load_models(module):
-    models = []
-    models_module = import_module("models")
-    for attribute_name in dir(models_module):
-        model = getattr(models_module, attribute_name)
-        if _check_model(model):
-            models.append(model)
+    """Load models from given module."""
+    modules = _import_submodules(module)
+    return get_models(modules)
 
-    return models
 
+def get_models(modules):
+    return {m for module in modules for m in filter(
+        _check_model, (getattr(module, name) for name in dir(module))
+    )}
 
 def _import_submodules(package, passed=UNDEFINED):
-    return import_module("models")
+    if passed is UNDEFINED:
+        passed = set()
+
+    if isinstance(package, str):
+        package = import_module(package)
+
+    modules = []
+
+    for loader, name, is_pkg in pkgutil.walk_packages(package.__path__, package.__name__ + '.'):
+        if name in passed:
+            continue
+        passed.add(name)
+
+        module = sys.modules.get(name)
+        if module is None:
+            module = loader.find_module(name).load_module(name)
+
+        modules.append(module)
+        if is_pkg:
+            modules += _import_submodules(module, passed=passed)
+
+    return modules
 
 
-def _check_model(obj):
-    """Check object if it's a peewee model and unique."""
+def _check_model(obj, models=None):
+    """Checks object if it's a peewee model and unique."""
     return isinstance(obj, type) and issubclass(obj, peewee.Model) and hasattr(obj, '_meta')
 
 

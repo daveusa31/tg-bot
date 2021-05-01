@@ -1,20 +1,18 @@
-from collections import OrderedDict
-from collections.abc import Hashable
-
 import peewee
+import collections
 from playhouse.reflection import Column as VanilaColumn
 
 
 INDENT = '    '
 NEWLINE = '\n' + INDENT
 FIELD_MODULES_MAP = {
-    'ArrayField': 'peewee_pext',
+    'ArrayField': 'peewee_text',
     'BinaryJSONField': 'peewee_pext',
     'DateTimeTZField': 'peewee_pext',
-    'HStoreField': 'peewee_pext',
-    'IntervalField': 'peewee_pext',
-    'JSONField': 'peewee_pext',
-    'TSVectorField': 'peewee_pext',
+    'HStoreField': 'peewee_text',
+    'IntervalField': 'peewee_text',
+    'JSONField': 'peewee_text',
+    'TSVectorField': 'peewee_text',
 }
 
 
@@ -78,34 +76,13 @@ class Column(VanilaColumn):
             name=name, field=field, space=space, module=module)
 
     def get_field_parameters(self):
-        params = {}
-        if self.extra_parameters is not None:
-            params.update(self.extra_parameters)
+        params = super().get_field_parameters()
 
-        # Set up default attributes.
-        if self.nullable:
-            params['null'] = True
-        if self.field_class is peewee.ForeignKeyField or self.name != self.column_name:
-            params['column_name'] = "'%s'" % self.column_name
-        if self.primary_key and not issubclass(self.field_class, peewee.AutoField):
-            params['primary_key'] = True
+        if "constraints" in params:
+            del params["constraints"]
+
         if self.default is not None:
-            params['default'] = self.default
-
-        # Handle ForeignKeyField-specific attributes.
-        if self.is_foreign_key():
-            params['model'] = self.rel_model
-            if self.to_field:
-                params['field'] = "'%s'" % self.to_field
-            if self.related_name:
-                params['backref'] = "'%s'" % self.related_name
-
-        # Handle indexes on column.
-        if not self.is_primary_key():
-            if self.unique:
-                params['unique'] = 'True'
-            elif self.index and not self.is_foreign_key():
-                params['index'] = 'True'
+            params["default"] = self.default
 
         return params
 
@@ -173,8 +150,8 @@ def diff_many(models1, models2, migrator=None, reverse=False):
         models1 = reversed(models1)
         models2 = reversed(models2)
 
-    models1 = OrderedDict([(m._meta.name, m) for m in models1])
-    models2 = OrderedDict([(m._meta.name, m) for m in models2])
+    models1 = collections.OrderedDict([(m._meta.name, m) for m in models1])
+    models2 = collections.OrderedDict([(m._meta.name, m) for m in models2])
 
     changes = []
 
@@ -259,7 +236,8 @@ def compare_fields(field1, field2, **kwargs):
 def field_to_params(field, **kwargs):
     params = FIELD_TO_PARAMS.get(type(field), lambda f: {})(field)
     if field.default is not None and \
-            not callable(field.default) and isinstance(field.default, Hashable):
+            not callable(field.default) \
+            and isinstance(field.default, collections.Hashable):
         params['default'] = field.default
 
     params['index'] = field.index and not field.unique, field.unique
@@ -280,11 +258,10 @@ def change_not_null(Model, name, null):
 
 
 def add_index(Model, name, unique):
-    operation = 'add_index'
-    return "migrator.%s('%s', %s, unique=%s)" %\
-        (operation, Model._meta.table_name, repr(name), unique)
+    operation = "add_index"
+    return "migrator.%s('%s', %s, unique=%s)" % (operation, Model._meta.table_name, repr(name), unique)
 
 
 def drop_index(Model, name):
-    operation = 'drop_index'
+    operation = "drop_index"
     return "migrator.%s('%s', %s)" % (operation, Model._meta.table_name, repr(name))

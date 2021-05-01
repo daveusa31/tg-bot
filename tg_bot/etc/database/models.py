@@ -117,7 +117,7 @@ class MigrateHistory(peewee.Model):
     """Presents the migrations in database."""
 
     name = peewee.CharField()
-    module = peewee.CharField()
+    module = peewee.CharField(null=True)
     migrated_at = peewee.TimestampField()
 
     def __unicode__(self):
