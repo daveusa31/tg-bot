@@ -25,3 +25,16 @@ class TextField(peewee.TextField):
                 response = False
 
             return response
+
+
+class BooleanField(peewee.BooleanField):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def is_true(self, is_true=True):
+        op = peewee.OP.EQ if is_true else peewee.OP.NE
+        return peewee.Expression(self, op, 1)
+
+    def is_false(self, is_false=True):
+        op = peewee.OP.EQ if is_false else peewee.OP.NE
+        return peewee.Expression(self, op, 0)
