@@ -194,11 +194,8 @@ def remove_model(Model, **kwargs):
 
 
 def create_fields(Model, *fields, **kwargs):
-    return "migrator.add_fields(%s'%s', %s)" % (
-        NEWLINE,
-        Model._meta.table_name,
-        NEWLINE + (',' + NEWLINE).join([field_to_code(field, False, **kwargs) for field in fields])
-    )
+    fields_in_code = [field_to_code(field, False, **kwargs) for field in fields]
+    return "migrator.add_fields('{}', {})".format(Model._meta.table_name, ", ".join(fields_in_code))
 
 
 def drop_fields(Model, *fields, **kwargs):

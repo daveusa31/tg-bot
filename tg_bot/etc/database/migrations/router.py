@@ -236,14 +236,24 @@ class Router(BaseRouter):
         filename = name + '.py'
         path = os.path.join(self.migrate_dir, filename)
 
-        need_imports = []
-        for line in migrate.split("\n"):
-            if " = " in line and '"' not in line:
-                _import = "import {}".format(".".join(line.split(" = ")[1][:line.index("(")].split(".")[:-1]))
-                if _import not in need_imports:
-                    need_imports.append(_import)
+        need_modules = []
+        for _migrate in [migrate, rollback]:
+            for line in _migrate.split("\n"):
+                if ".add_fields" in line:
+                    function_params = line[line.index(".add_fields") + len(".add_fields") + 1:-1]
+                    fields = function_params[function_params[1:].index("'") + 4:].split("), ")
+                    for field in fields:
+                        module = ".".join(field.split(".")[:-1]).split("=")[1]
 
-        imports_in_str = "\n".join(need_imports)
+                        if module not in need_modules:
+                            need_modules.append(module)
+                elif " = " in line and '"' not in line:
+                    module = ".".join(line.split(" = ")[1][:line.index("(")].split(".")[:-1])
+                    if module not in need_modules:
+                        need_modules.append(module)
+
+        imports_in_str = "\n".join(["import {}".format(module) for module in need_modules])
+
         with open(path, 'w') as f:
             f.write(MIGRATE_TEMPLATE.format(migrate=migrate, rollback=rollback, name=filename, imports=imports_in_str))
 
