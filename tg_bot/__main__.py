@@ -34,6 +34,6 @@ def setup(filter=True, handler=False, middleware=True, schedule=False, use_djang
 
 
 def migrate():
-    migrate_dir = os.path.join(pathlib.Path(__file__).resolve().parent, "etc", "migrations")
-    router = Router(models.DataBase._meta.database, migrate_dir=migrate_dir)
+    migrate_dir = os.path.join(pathlib.Path(__file__).parent, "etc", "migrations")
+    router = Router(models.DataBase._meta.database, migrate_dir, module_name="tg_bot")
     router.run()

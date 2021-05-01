@@ -10,7 +10,11 @@ import logging
 from unittest import mock
 from types import ModuleType
 from importlib import import_module
-from functools import cached_property
+
+try:
+    from functools import cached_property
+except ImportError:
+    from cached_property import cached_property
 
 from .logger import LOGGER
 from .migrator import Migrator
@@ -55,7 +59,8 @@ class BaseRouter(object):
     @property
     def done(self):
         """Scan migrations in database."""
-        return [mm.name for mm in self.model.select().order_by(self.model.id)]
+        query = self.model.select().where(self.model.module == self.module_name).order_by(self.model.id)
+        return [migration.name for migration in query]
 
     @property
     def diff(self):
@@ -148,7 +153,7 @@ class BaseRouter(object):
                         migrate(migrator, self.database, fake=fake)
 
                 if force:
-                    self.model.create(name=name)
+                    self.model.create(name=name, module=self.module_name)
                     self.logger.info('Done %s', name)
 
                 migrator.clean()
@@ -159,7 +164,7 @@ class BaseRouter(object):
                     self.logger.info('Migrate "%s"', name)
                     migrate(migrator, self.database, fake=fake)
                     migrator.run()
-                    self.model.create(name=name)
+                    self.model.create(name=name, module=self.module_name)
                 else:
                     self.logger.info('Rolling back %s', name)
                     rollback(migrator, self.database, fake=fake)
@@ -209,9 +214,10 @@ class BaseRouter(object):
 class Router(BaseRouter):
     filemask = re.compile(r"[\d]{3}_[^\.]+\.py$")
 
-    def __init__(self, database, migrate_dir, **kwargs):
+    def __init__(self, database, migrate_dir, module_name="bot", **kwargs):
         super(Router, self).__init__(database, **kwargs)
         self.migrate_dir = migrate_dir
+        self.module_name = module_name
 
     @property
     def todo(self):
