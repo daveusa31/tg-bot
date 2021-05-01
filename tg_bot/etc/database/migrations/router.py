@@ -18,18 +18,16 @@ from tg_bot.etc.conf import settings
 from .auto import diff_many, NEWLINE
 from tg_bot.etc.database.models import MigrateHistory
 
-
 CLEAN_RE = re.compile(r'\s+$', re.M)
 CURDIR = os.getcwd()
 UNDEFINED = object()
-VOID = lambda m, d: None # noqa
+VOID = lambda m, d: None  # noqa
 template_path = os.path.join(pathlib.Path(__file__).parent, "template.txt")
 with open(template_path) as t:
     MIGRATE_TEMPLATE = t.read()
 
 
 class BaseRouter(object):
-
     """Abstract base class for router."""
 
     def __init__(self, database, ignore=None, schema=None, logger=LOGGER):
@@ -209,7 +207,6 @@ class BaseRouter(object):
 
 
 class Router(BaseRouter):
-
     filemask = re.compile(r"[\d]{3}_[^\.]+\.py$")
 
     def __init__(self, database, migrate_dir, **kwargs):
@@ -246,11 +243,11 @@ class Router(BaseRouter):
 
         migration_file = "{}.py".format(name)
 
-        if name.endswith("tg_bot") is False:
-            migration_path = os.path.join(self.migrate_dir, migration_file)
-        else:
+        if name.endswith("tg_bot"):
+            # Если миграция для библиотеки
             migration_path = os.path.join(pathlib.Path(__file__).parent.parent.parent, "migrations", migration_file)
-
+        else:
+            migration_path = os.path.join(self.migrate_dir, migration_file)
 
         with open(migration_path, **call_params) as f:
             code = f.read()
@@ -293,6 +290,7 @@ def load_models(module):
             models.append(model)
 
     return models
+
 
 def _import_submodules(package, passed=UNDEFINED):
     return import_module("models")
