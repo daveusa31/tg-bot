@@ -1,7 +1,7 @@
 import peewee
+import inspect
 import collections
 from playhouse.reflection import Column as VanilaColumn
-
 
 INDENT = '    '
 NEWLINE = '\n' + INDENT
@@ -86,16 +86,29 @@ def diff_one(model1, model2, **kwargs):
     fields1 = model1._meta.fields
     fields2 = model2._meta.fields
 
-    # Add fields
-    names1 = set(fields1) - set(fields2)
-    if names1:
-        fields = [fields1[name] for name in names1]
-        changes.append(create_fields(model1, *fields, **kwargs))
+    names1 = set(fields1) - set(fields2)  # Add fields
+    names2 = set(fields2) - set(fields1)  # Drop fields
 
-    # Drop fields
-    names2 = set(fields2) - set(fields1)
-    if names2:
-        changes.append(drop_fields(model1, *names2))
+    added_fields = [fields1[name] for name in names1]
+    deleted_fields = [fields2[name] for name in names2]
+
+    added_fields_in_params = [field_to_params(field) for field in added_fields]
+
+    for field in deleted_fields:
+        deleted_field_params = field_to_params(field)
+
+        if deleted_field_params in added_fields_in_params:
+            new_field = added_fields[added_fields_in_params.index(deleted_field_params)]
+            added_fields.remove(new_field)
+            deleted_fields.remove(field)
+
+            changes.append(rename_field(model1, field.name, new_field.name))
+
+    if 0 < len(added_fields):
+        changes.append(create_fields(model1, *added_fields, **kwargs))
+
+    if 0 < len(deleted_fields):
+        changes.append(drop_fields(model1, *deleted_fields))
 
     # Change fields
     fields_ = []
@@ -124,7 +137,8 @@ def diff_one(model1, model2, **kwargs):
 
     for name, index, unique in indexes_:
         if index is True or unique is True:
-            if fields2[name].unique or (fields2[name].index and isinstance(fields2[name], peewee.ForeignKeyField) is False):
+            if fields2[name].unique or (
+                    fields2[name].index and isinstance(fields2[name], peewee.ForeignKeyField) is False):
                 changes.append(drop_index(model1, name))
             changes.append(add_index(model1, name, unique))
         else:
@@ -254,3 +268,8 @@ def add_index(Model, name, unique):
 def drop_index(Model, name):
     operation = "drop_index"
     return "migrator.%s('%s', %s)" % (operation, Model._meta.table_name, repr(name))
+
+
+def rename_field(model, old_name, new_name):
+    operation = inspect.currentframe().f_code.co_name
+    return "migrator.{}('{}', '{}', '{}')".format(operation, model._meta.table_name, old_name, new_name)

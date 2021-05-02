@@ -1,3 +1,4 @@
+import peewee
 import os.path as path
 import datetime as dt
 
@@ -5,6 +6,8 @@ import peewee as pw
 from playhouse.postgres_ext import (ArrayField, BinaryJSONField, DateTimeTZField,
                                     HStoreField, IntervalField, JSONField,
                                     TSVectorField)
+
+from tg_bot.etc.database import fields
 
 current_dir = path.abspath(path.dirname(__file__))
 
@@ -65,19 +68,12 @@ def test_auto():
 def test_auto_postgresext():
     from tg_bot.etc.database.migrations.auto import model_to_code
 
-    class Object(pw.Model):
-        array_field = ArrayField()
-        binary_json_field = BinaryJSONField()
-        dattime_tz_field = DateTimeTZField()
-        hstore_field = HStoreField()
-        interval_field = IntervalField()
-        json_field = JSONField()
-        ts_vector_field = TSVectorField()
+    class Object(peewee.Model):
+        is_active = fields.BooleanField(index=True)
 
     code = model_to_code(Object)
     assert code
-    assert "json_field = peewee_text.JSONField()" in code
-    assert "hstore_field = peewee_text.HStoreField(index=True)" in code
+    assert "is_active = tg_bot.etc.database.fields.BooleanField(index=True)" in code
 
 
 def test_auto_multi_column_index():

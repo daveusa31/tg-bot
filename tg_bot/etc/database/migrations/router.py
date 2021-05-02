@@ -38,12 +38,13 @@ with open(template_path) as t:
 class BaseRouter(object):
     """Abstract base class for router."""
 
-    def __init__(self, database, ignore=None, schema=None, logger=LOGGER):
+    def __init__(self, database, ignore=None, schema=None, logger=LOGGER, models="models"):
         """Initialize the router."""
         self.database = database
         self.schema = schema
         self.ignore = ignore
         self.logger = logger
+        self.models = models
         if not isinstance(self.database, (peewee.Database, peewee.Proxy)):
             raise RuntimeError('Invalid database: %s' % database)
 
@@ -93,7 +94,7 @@ class BaseRouter(object):
                 if isinstance(auto, bool):
                     modules = [m for _, m, ispkg in pkgutil.iter_modules([CURDIR]) if ispkg]
 
-                models = [m for module in modules for m in get_models([import_module("models")])]
+                models = [m for module in modules for m in get_models([import_module(self.models)])]
 
             except ImportError:
                 return self.logger.error("Can't import models module: %s", auto)
@@ -109,6 +110,9 @@ class BaseRouter(object):
                 return self.logger.warn('No changes found.')
 
             rollback = compile_migrations(self.migrator, models, reverse=True)
+
+        if "tg_bot" == self.module_name:
+            name = "{}_tg_bot".format(name)
 
         self.logger.info('Creating migration "%s"', name)
         name = self.compile(name, migrate, rollback)
@@ -251,7 +255,7 @@ class Router(BaseRouter):
                             need_modules.append(module)
                 elif " = " in line and '"' not in line:
                     module = ".".join(line.split(" = ")[1][:line.index("(")].split(".")[:-1])
-                    if module not in need_modules:
+                    if module not in need_modules and "" != module:
                         need_modules.append(module)
 
         imports_in_str = "\n".join(["import {}".format(module) for module in need_modules])

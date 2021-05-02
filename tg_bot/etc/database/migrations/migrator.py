@@ -271,7 +271,7 @@ class Migrator(object):
             delattr(field.rel_model, field.backref)
 
     @get_model
-    def rename_column(self, model, old_name, new_name):
+    def rename_field(self, model, old_name, new_name):
         """Rename field in model."""
         field = model._meta.fields[old_name]
         if isinstance(field, pw.ForeignKeyField):
@@ -283,8 +283,6 @@ class Migrator(object):
             field.column_name = new_name = field.column_name + '_id'
         self.ops.append(self.migrator.rename_column(model._meta.table_name, old_name, new_name))
         return model
-
-    rename_field = rename_column
 
     def rename_table(self, model, new_name):
         """Rename table in database."""

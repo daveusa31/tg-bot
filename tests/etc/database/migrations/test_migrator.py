@@ -53,7 +53,7 @@ def test_migrator():
     migrator.run()
     assert Order.customer.name == 'customer'
 
-    migrator.rename_column(Order, 'number', 'identifier')
+    migrator.rename_field(Order, 'number', 'identifier')
     assert 'identifier' in Order._meta.fields
     migrator.run()
 
