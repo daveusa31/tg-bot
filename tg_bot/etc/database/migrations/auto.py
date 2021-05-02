@@ -124,7 +124,7 @@ def diff_one(model1, model2, **kwargs):
 
     for name, index, unique in indexes_:
         if index is True or unique is True:
-            if fields2[name].unique or fields2[name].index:
+            if fields2[name].unique or (fields2[name].index and isinstance(fields2[name], peewee.ForeignKeyField) is False):
                 changes.append(drop_index(model1, name))
             changes.append(add_index(model1, name, unique))
         else:
