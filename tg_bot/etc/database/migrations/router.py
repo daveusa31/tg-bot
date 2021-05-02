@@ -7,6 +7,7 @@ import peewee
 import pkgutil
 import pathlib
 import logging
+import datetime
 from unittest import mock
 from types import ModuleType
 from importlib import import_module
@@ -20,6 +21,7 @@ from .logger import LOGGER
 from .migrator import Migrator
 from tg_bot.etc.conf import settings
 from .auto import diff_many, NEWLINE
+from tg_bot.version import  __version__
 from .compat import string_types, exec_in
 from tg_bot.etc.database.models import MigrateHistory
 
@@ -253,9 +255,12 @@ class Router(BaseRouter):
                         need_modules.append(module)
 
         imports_in_str = "\n".join(["import {}".format(module) for module in need_modules])
+        date = datetime.datetime.now().strftime("%d-%m-%Y %H:%M")
+        text = MIGRATE_TEMPLATE.format(migrate=migrate, rollback=rollback,
+                                       imports=imports_in_str, version=__version__, date=date)
 
         with open(path, 'w') as f:
-            f.write(MIGRATE_TEMPLATE.format(migrate=migrate, rollback=rollback, name=filename, imports=imports_in_str))
+            f.write(text)
 
         return name
 
