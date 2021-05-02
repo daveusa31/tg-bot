@@ -21,13 +21,13 @@ def test_migrator():
     database = connect('sqlite:///:memory:')
     migrator = Migrator(database)
 
-    @migrator.create_table
+    @migrator.create_model
     class Customer(pw.Model):
         name = pw.CharField()
 
     assert Customer == migrator.orm['customer']
 
-    @migrator.create_table
+    @migrator.create_model
     class Order(pw.Model):
         number = pw.CharField()
         uid = pw.CharField(unique=True)
@@ -111,7 +111,7 @@ def test_migrator_postgres(_mock_connection):
     database = connect('postgres:///fake')
 
     migrator = Migrator(database)
-    @migrator.create_table
+    @migrator.create_model
     class User(peewee.Model):
         name = peewee.CharField()
         created_at = peewee.DateField()
@@ -141,7 +141,7 @@ def test_migrator_schema(_mock_connection):
     def has_schema_select_query():
         return database.cursor().queries[0] == 'SET search_path TO {}'.format(schema_name)
 
-    @migrator.create_table
+    @migrator.create_model
     class User(pw.Model):
         name = pw.CharField()
         created_at = pw.DateField()

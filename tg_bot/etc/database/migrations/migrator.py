@@ -159,7 +159,7 @@ class Migrator(object):
         """Clean the operations."""
         self.ops = list()
 
-    def create_table(self, model):
+    def create_model(self, model):
         """Create model and table in database.
 
         >> migrator.create_table(model)
@@ -168,8 +168,6 @@ class Migrator(object):
         model._meta.database = self.database
         self.ops.append(model.create_table)
         return model
-
-    create_model = create_table
 
     @get_model
     def drop_table(self, model, cascade=True):
