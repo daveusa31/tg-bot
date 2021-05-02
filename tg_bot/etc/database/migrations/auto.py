@@ -199,8 +199,8 @@ def create_fields(Model, *fields, **kwargs):
 
 
 def drop_fields(Model, *fields, **kwargs):
-    return "migrator.remove_fields('%s', %s)" % (
-        Model._meta.table_name, ', '.join(map(repr, fields))
+    return "migrator.remove_fields('%s', '%s')" % (
+        Model._meta.table_name, ', '.join([field.name for field in fields])
     )
 
 
