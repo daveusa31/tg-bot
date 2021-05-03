@@ -249,7 +249,8 @@ class Router(BaseRouter):
                     function_params = line[line.index(".add_fields") + len(".add_fields") + 1:-1]
                     fields = function_params[function_params[1:].index("'") + 4:].split("), ")
                     for field in fields:
-                        module = ".".join(field.split(".")[:-1]).split("=")[1]
+                        module = ".".join(field.split("(")[0].split("=")[1].split(".")[:-1])
+
 
                         if module not in need_modules:
                             need_modules.append(module)

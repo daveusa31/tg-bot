@@ -5,6 +5,5 @@ from tg_bot.etc.database import migrations
 
 class Command(BaseCommand):
     def handle(self):
-        router = migrations.Router(settings.DATABASE["peewee_engine"], settings.BASE_DIR / "migrations")
-        router.create(auto=True)
-        
+        migrate_dir = settings.BASE_DIR / "migrations"
+        return migrations.Router(settings.DATABASE["peewee_engine"], migrate_dir, module_name="bot").create(auto=True)
