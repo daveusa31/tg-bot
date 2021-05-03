@@ -601,17 +601,17 @@ class IPAddressField(peewee.BigIntegerField, Field):
     def db_value(self, value: str):
         if value and isinstance(value, (str, int)):
             try:
-                ip_address(value)
+                ipaddress.ip_address(value)
             except Exception as error:
                 raise ValueError(f"""{self.__class__.__name__} IP Value is
                 not a Valid IP v4 or v6 Address (valid values must be a valid
                 {ipaddress.ip_address} {ipaddress.IPv4Address}): {value} --> {error}.""")
             else:
-                return int(ip_address(value))  # Valid IPv4Address/IPv6Address.
+                return int(ipaddress.ip_address(value))  # Valid IPv4Address/IPv6Address.
         return value  # is None.
 
     def python_value(self, value: str) -> ipaddress.IPv4Address:
-        return ip_address(value) if value else value
+        return ipaddress.ip_address(value) if value else value
 
 
 class IPNetworkField(CharField):
@@ -625,7 +625,7 @@ class IPNetworkField(CharField):
     def db_value(self, value: str) -> str:
         if value and isinstance(value, str):
             try:
-                ip_network(value)
+                ipaddress.ip_network(value)
             except Exception as error:
                 raise ValueError(f"""{self.__class__.__name__} Value string is
                 not a Valid IP v4 or v6 Network (valid values must be a valid
@@ -635,7 +635,6 @@ class IPNetworkField(CharField):
         return value  # is None.
 
     def python_value(self, value: str) -> ipaddress.IPv4Network:
-        return ip_network(value) if value else value
 
 
 class SWIFTISOCodeField(CharField):
@@ -762,6 +761,7 @@ class IBANISOCodeField(CharField):
                 not a Valid IBAN-Code ISO-13616:2007 (valid values must have a
                 valid IBAN CheckSum integer number): {value} -> {x}.""")
         return '%02d' % (98 - int(value_digits) % 97)
+        return ipaddress.ip_network(value) if value else value
 
 
 class IANCodeField(CharField):
@@ -863,12 +863,12 @@ class PastDateField(peewee.DateField, Field):
             if valid_date > date.today():
                 raise ValueError(f"""{self.__class__.__name__} Dates Value is
                 not in the Past (valid values must be in the Past or Present):
-                {valid_date}, {value} > {date.today()}.""")
-        if value and isinstance(value, date):
-            if value > date.today():
+                {valid_date}, {value} > {datetime.date.today()}.""")
+        if value and isinstance(value, datetime.date):
+            if value > datetime.date.today():
                 raise ValueError(f"""{self.__class__.__name__} Dates Value is
                 not in the Past (valid values must be in the Past or Present):
-                {value} > {date.today()}.""")
+                {value} > {datetime.date.today()}.""")
         return value
 
     @staticmethod
@@ -878,7 +878,6 @@ class PastDateField(peewee.DateField, Field):
         ids = f'id="{ids}" ' if ids else ""
         r = "required " if required else ""
         return (f'<input type="date" name="date" {ids}{clas}{r} '
-                f'max="{date.today()}">\n')
 
 
 class LanguageISOCodeField(peewee.FixedCharField, Field):
@@ -1088,6 +1087,7 @@ class CurrencyISOCodeField(SmallIntegerField):
         else:
             html_widget += '</select>\n'
             return html_widget
+                f'max="{datetime.date.today()}">\n')
 
 
 class CharFieldCustom(CharField):
@@ -1204,9 +1204,9 @@ class ColorHexadecimalField(peewee.FixedCharField, Field):
     def python_value(self, value: str) -> collections.namedtuple:
         if value and isinstance(value, str):
             rgb = self.hex2rgb(value.replace("#", ""))
-            hls = rgb_to_hls(rgb.red, rgb.green, rgb.blue)
-            hsv = rgb_to_hsv(rgb.red, rgb.green, rgb.blue)
-            yiq = rgb_to_yiq(rgb.red, rgb.green, rgb.blue)
+            hls = colorsys.rgb_to_hls(rgb.red, rgb.green, rgb.blue)
+            hsv = colorsys.rgb_to_hsv(rgb.red, rgb.green, rgb.blue)
+            yiq = colorsys.rgb_to_yiq(rgb.red, rgb.green, rgb.blue)
 
             hls = collections.namedtuple("HLS", "h l s")(  # Round,default precision huge
                 round(hls[0], 2), round(hls[1], 2), round(hls[2], 2))
@@ -1388,6 +1388,7 @@ class DateTimeTZRangeField(Field):
     db_field = 'tstzrange'
 
 
+# TODO: переписать. Посмотреть, как сделать у django
 class FileField(CharField):
     """File field"""
 
