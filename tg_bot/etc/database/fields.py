@@ -1,5 +1,6 @@
 import re
 import peewee
+import typing
 import ipaddress
 import collections
 
@@ -12,25 +13,30 @@ from tg_bot.etc.database import exceptions
 
 
 class Field(peewee.Field):
-    def __init__(self, validators=(), *args, **kwargs):
+    def __init__(self, validators: typing.Union = (typing.AnyStr, typing.Callable), *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.validators = validators
+        self.validators: typing.Tuple = validators
 
     def db_value(self, value):
         if self.run_validators(value) is False:
-            raise exceptions.ValidationError(value)
+            raise exceptions.ValidationError("The value({}) failed validation".format(value))
 
         return value
 
     def run_validators(self, value):
         for validator in self.validators:
-            if validator(value):
-                response = True
-            else:
-                response = False
+            if isinstance(validator, str):
+                result = value == validator
+            else:  # Validator function
+                result = validator(value)
 
-            return response
+            if result:
+                break
+        else:
+            result = False
+
+        return result
 
 
 class CharField(peewee.CharField, Field):
