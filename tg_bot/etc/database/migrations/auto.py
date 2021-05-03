@@ -37,12 +37,13 @@ FIELD_TO_PARAMS = {
 
 class Column(VanilaColumn):
 
-    def __init__(self, field, migrator=None):  # noqa
+    def __init__(self, field, model=None, migrator=None):  # noqa
         super(Column, self).__init__(
             field.name, type(field), field.field_type, field.null,
             primary_key=field.primary_key, column_name=field.column_name, index=field.index,
             unique=field.unique, extra_parameters={}
         )
+        self.model = model
         if field.default is not None and not callable(field.default):
             self.default = repr(field.default)
 
@@ -69,6 +70,10 @@ class Column(VanilaColumn):
 
     def get_field_parameters(self):
         params = super().get_field_parameters()
+
+        if "model" in params:
+            if self.model is not None and "".join(params["model"].split("'")[1]) == self.model._meta.table_name:
+                params["model"] = "'self'"
 
         if "constraints" in params:
             del params["constraints"]
@@ -184,7 +189,7 @@ def model_to_code(Model, **kwargs):
 {meta}
 """
     fields = INDENT + NEWLINE.join([
-        field_to_code(field, **kwargs) for field in Model._meta.sorted_fields
+        field_to_code(field, **kwargs, model=Model) for field in Model._meta.sorted_fields
         if not (isinstance(field, peewee.PrimaryKeyField) and field.name == 'id')
     ])
     meta = INDENT + NEWLINE.join(filter(None, [
@@ -218,8 +223,8 @@ def drop_fields(Model, *fields, **kwargs):
     )
 
 
-def field_to_code(field, space=True, **kwargs):
-    col = Column(field, **kwargs)
+def field_to_code(field, space=True, model=None, **kwargs):
+    col = Column(field, model=model, **kwargs)
     return col.get_field(' ' if space else '')
 
 
