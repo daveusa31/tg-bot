@@ -11,7 +11,7 @@ setuptools.setup(
     author="daveusa31",
     packages=setuptools.find_packages(),
     include_package_data=True,
-    python_requires=">=3.6",
+    python_requires=">=3.5",
     install_requires=requires,
     zip_safe=False,
     classifiers=[
@@ -19,6 +19,7 @@ setuptools.setup(
         "Intended Audience :: Developers",
         "Natural Language :: Russian",
         "Programming Language :: Python",
+        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
