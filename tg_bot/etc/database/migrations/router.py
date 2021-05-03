@@ -11,17 +11,13 @@ import datetime
 from unittest import mock
 from types import ModuleType
 from importlib import import_module
-
-try:
-    from functools import cached_property
-except ImportError:
-    from cached_property import cached_property
+from cached_property import cached_property
 
 from .logger import LOGGER
 from .migrator import Migrator
 from tg_bot.etc.conf import settings
 from .auto import diff_many, NEWLINE
-from tg_bot.version import  __version__
+from tg_bot.version import __version__
 from .compat import string_types, exec_in
 from tg_bot.etc.database.models import MigrateHistory
 
