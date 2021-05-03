@@ -1,6 +1,5 @@
 import peewee
 import functools
-import peewee_extra_fields
 
 from . import fields
 from . import validators
@@ -46,14 +45,14 @@ class State(DataBase):
     chat = peewee.TextField()
     user = peewee.TextField()
     state = peewee.TextField(null=True)
-    data = peewee_extra_fields.JSONField(null=True)
-    bucket = peewee_extra_fields.JSONField(null=True)
+    data = fields.JSONField(null=True)
+    bucket = fields.JSONField(null=True)
 
 
 class Broadcast(DataBase):
     starter_chat_id = peewee.IntegerField(help_text="Чай айди, кто запустил")
     text = peewee.TextField(help_text="Текст рассылки")
-    recipients = peewee_extra_fields.JSONField(help_text="chat_id получателей")
+    recipients = fields.JSONField(help_text="chat_id получателей")
     success = peewee.IntegerField(default=0, help_text="Кол-во юзеров успешно получили")
     failed = peewee.IntegerField(default=0, help_text="Кол-во юзеров не получили")
     last_send = peewee.TimestampField(default=0, help_text="Последнее отправленное сообщение")
@@ -61,7 +60,7 @@ class Broadcast(DataBase):
 
 class CallbackDataFilter(DataBase):
     code = peewee.TextField(index=True, help_text="Код, который будет в callback_data")
-    data = peewee_extra_fields.JSONField(help_text="Информация с кнопок")
+    data = fields.JSONField(help_text="Информация с кнопок")
 
 
 class AutoBackup(DataBase):

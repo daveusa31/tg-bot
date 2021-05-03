@@ -1,5 +1,4 @@
 import peewee
-import peewee_extra_fields
 
 from tg_bot.etc.conf import settings
 from tg_bot.etc.database import models, fields, validators
@@ -12,15 +11,15 @@ def migrate(migrator, database, fake=False, **kwargs):
         chat = peewee.TextField()
         user = peewee.TextField()
         state = peewee.TextField(null=True)
-        data = peewee_extra_fields.JSONField(null=True)
-        bucket = peewee_extra_fields.JSONField(null=True)
+        data = fields.JSONField(null=True)
+        bucket = fields.JSONField(null=True)
 
     State.create_table()
 
     class Broadcast(models.DataBase):
         starter_chat_id = peewee.IntegerField(help_text="Чай айди, кто запустил")
         text = peewee.TextField(help_text="Текст рассылки")
-        recipients = peewee_extra_fields.JSONField(help_text="chat_id получателей")
+        recipients = fields.JSONField(help_text="chat_id получателей")
         success = peewee.IntegerField(default=0, help_text="Кол-во юзеров успешно получили")
         failed = peewee.IntegerField(default=0, help_text="Кол-во юзеров не получили")
         last_send = peewee.TimestampField(default=0, help_text="Последнее отправленное сообщение")
@@ -29,7 +28,7 @@ def migrate(migrator, database, fake=False, **kwargs):
 
     class CallbackDataFilter(models.DataBase):
         code = peewee.TextField(index=True, help_text="Код, который будет в callback_data")
-        data = peewee_extra_fields.JSONField(help_text="Информация с кнопок")
+        data = fields.JSONField(help_text="Информация с кнопок")
 
     CallbackDataFilter.create_table()
 
