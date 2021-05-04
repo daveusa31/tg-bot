@@ -1,4 +1,5 @@
 import os
+import time
 import shutil
 import unittest
 from peewee import *
@@ -9,13 +10,33 @@ from random import randint, choice
 from datetime import date, datetime
 
 from tg_bot.etc.database.fields import *
-from tg_bot.etc.database import exceptions, fields
+from tg_bot.etc.database import exceptions, fields, models
 
 # Random order for tests runs. (Original is: -1 if x<y, 0 if x==y, 1 if x>y).
 unittest.TestLoader.sortTestMethodsUsing = lambda _, x, y: randint(-1, 1)
 
 db = SqliteDatabase(":memory:")
 db.connect()
+
+
+def test_TimestampField():
+    first_time = time.time()
+
+    class Post(models.DataBase):
+        timestamp = fields.TimestampField(auto_now_add=True, auto_now=True, resolution=6)
+
+        database = db
+
+    Post.create_table()
+    Post.create()
+    time.sleep(0.1)
+
+    second_time = Post().get().timestamp.timestamp()
+    assert second_time > first_time
+
+    Post.update().execute()
+    time.sleep(0.1)
+    assert Post().get().timestamp.timestamp() > second_time
 
 
 class TestFields(unittest.TestCase):

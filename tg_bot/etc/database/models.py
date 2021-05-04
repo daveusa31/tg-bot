@@ -1,43 +1,10 @@
 import peewee
 import functools
 
-from . import fields
-from . import validators
-from ..conf import settings
+from . import model, fields, validators
 
 
-def make_table_name(model):
-    model_name = model.__name__
-    pos = [i for i, e in enumerate(model_name + 'A') if e.isupper()]
-    parts = [model_name[pos[j]:pos[j + 1]].lower() for j in range(len(pos) - 1)]
-    table_name = "_".join(parts)
-    return table_name
-
-
-class DataBase(peewee.Model):
-    class Meta:
-        database = settings.DATABASE["peewee_engine"]
-        table_function = make_table_name
-
-    @classmethod
-    def get_models(cls):
-        return cls.__subclasses__()
-
-    @classmethod
-    def import_sql(cls):
-        try:
-            con = cls._meta.database.connect()
-        except peewee.OperationalError:
-            con = cls._meta.database.connection()
-
-        sql = "\n".join(line for line in con.iterdump())
-
-        return sql
-
-    @classmethod
-    def is_modified(cls):
-        response = 0 < len(cls.__subclasses__())
-        return response
+DataBase = model.Model
 
 
 class State(DataBase):

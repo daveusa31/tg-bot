@@ -46,6 +46,9 @@ class Field(peewee.Field):
 
         return result
 
+    def pre_update(self, model_instance):
+        pass
+
 
 class CharField(peewee.CharField, Field):
     pass
@@ -1170,6 +1173,35 @@ class JSONField(TextField):
             response = False
 
         return response
+
+
+class TimestampField(peewee.TimestampField, Field):
+    def __init__(self, auto_now_add=False, auto_now=False, utc=False, resolution=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.auto_now_add = auto_now_add
+        self.auto_now = auto_now
+        self.utc = utc
+        self.resolution = resolution
+
+        if not self.resolution:
+            self.resolution = 1
+        elif self.resolution in range(2, 7):
+            self.resolution = 10 ** self.resolution
+        elif self.resolution not in self.valid_resolutions:
+            raise ValueError('TimestampField resolution must be one of: %s' %
+                             ', '.join(str(i) for i in self.valid_resolutions))
+
+        self.ticks_to_microsecond = 1000000 // self.resolution
+
+        if self.auto_now_add:
+            default = datetime.datetime.utcnow if self.utc else datetime.datetime.now
+            kwargs.setdefault("default", default)
+
+    def pre_update(self, model_instance):
+        if self.auto_now:
+            setattr(model_instance, self.name, self.default())
+            return model_instance
+        
 
 # Most Wanted Fields:
 # - GeometryField
