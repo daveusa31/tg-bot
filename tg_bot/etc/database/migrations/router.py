@@ -11,7 +11,11 @@ import datetime
 from unittest import mock
 from types import ModuleType
 from importlib import import_module
-from cached_property import cached_property
+
+try:
+    from functools import cached_property
+except ImportError:
+    from cached_property import cached_property
 
 from .logger import LOGGER
 from .migrator import Migrator

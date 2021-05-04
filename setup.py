@@ -1,9 +1,14 @@
+import sys
 import setuptools
-
 
 with open("requirements.txt", "r", encoding="utf-8") as r:
     requires = [i.strip() for i in r]
 
+if sys.version_info >= (3, 8):
+    for require in requires:
+        if "cached-property" in require:
+            requires.remove(require)
+            break
 
 setuptools.setup(
     name="tg_bot",
