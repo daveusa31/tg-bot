@@ -27,7 +27,7 @@ class Field(peewee.Field):
 
     def db_value(self, value):
         if value is not None:
-            if self.run_validators(value) is False:
+            if 0 < len(self.validators) and self.run_validators(value) is False:
                 raise exceptions.ValidationError("The value({}) failed validation".format(value))
 
         return value
