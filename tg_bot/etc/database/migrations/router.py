@@ -27,8 +27,6 @@ CURDIR = os.getcwd()
 UNDEFINED = object()
 VOID = lambda m, d: None  # noqa
 template_path = os.path.join(pathlib.Path(__file__).parent, "template.txt")
-with open(template_path) as t:
-    MIGRATE_TEMPLATE = t.read()
 
 
 class BaseRouter(object):
@@ -257,6 +255,10 @@ class Router(BaseRouter):
 
         imports_in_str = "\n".join(["import {}".format(module) for module in need_modules])
         date = datetime.datetime.now().strftime("%d-%m-%Y %H:%M")
+
+        with open(template_path) as t:
+            MIGRATE_TEMPLATE = t.read()
+
         text = MIGRATE_TEMPLATE.format(migrate=migrate, rollback=rollback,
                                        imports=imports_in_str, version=__version__, date=date)
 
