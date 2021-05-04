@@ -3,7 +3,6 @@ import os
 import shutil
 import struct
 import peewee
-import typing
 import codecs
 import colorsys
 import datetime
@@ -21,23 +20,24 @@ from tg_bot.etc.database import exceptions
 
 
 class Field(peewee.Field):
-    def __init__(self, validators: typing.Union = (typing.AnyStr, typing.Callable), *args, **kwargs):
+    def __init__(self, validators=(), *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.validators: typing.Tuple = validators
+        self.validators = validators
 
     def db_value(self, value):
-        if self.run_validators(value) is False:
-            raise exceptions.ValidationError("The value({}) failed validation".format(value))
+        if value is not None:
+            if self.run_validators(value) is False:
+                raise exceptions.ValidationError("The value({}) failed validation".format(value))
 
         return value
 
     def run_validators(self, value):
         for validator in self.validators:
-            if isinstance(validator, str):
-                result = value == validator
-            else:  # Validator function
+            if callable(validator):
                 result = validator(value)
+            else:
+                result = value == validator
 
             if result:
                 break
