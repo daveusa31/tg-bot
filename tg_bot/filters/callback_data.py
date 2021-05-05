@@ -79,7 +79,7 @@ class CallbackDataFilter(Filter):
 
                 for key, value in data.items():
                     setattr(response, key, value)
-                    setattr(response, "delete", record_in_db.delete_instanse)
+                    setattr(response, "delete", record_in_db.delete_instance)
                 for key, value in self.config.items():
                     if isinstance(value, (list, tuple, set, frozenset)):
                         if data.get(key) not in value:
