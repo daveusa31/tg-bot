@@ -1,3 +1,4 @@
+import peewee
 import peewee as pw
 from functools import wraps
 from playhouse.migrate import (
@@ -63,6 +64,38 @@ class SchemaMigrator(ScM):
         if isinstance(field, pw.ForeignKeyField):
             field.name = name
         return op
+
+    @operation
+    def add_column(self, table, column_name, field):
+        is_foreign_key = isinstance(field, peewee.ForeignKeyField)
+        if is_foreign_key and not field.rel_field:
+            raise ValueError('Foreign keys must specify a `field`.')
+
+        operations = [self.alter_add_column(table, column_name, field)]
+
+        # In the event the field is *not* nullable, update with the default
+        # value and set not null.
+        if not field.null:
+            operations.extend([
+                self.apply_default(table, column_name, field),
+                self.add_not_null(table, column_name)])
+
+        if is_foreign_key and self.explicit_create_foreign_key:
+            operations.append(
+                self.add_foreign_key_constraint(
+                    table,
+                    column_name,
+                    field.rel_model._meta.table_name,
+                    field.rel_field.column_name,
+                    field.on_delete,
+                    field.on_update))
+
+        if field.index or field.unique:
+            using = getattr(field, 'index_type', None)
+            operations.append(self.add_index(table, (column_name,),
+                                             field.unique, using))
+
+        return operations
 
 
 class MySQLMigrator(SchemaMigrator, MqM):
